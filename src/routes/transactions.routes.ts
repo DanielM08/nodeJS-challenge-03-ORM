@@ -2,9 +2,10 @@ import { Router } from 'express';
 import multer from 'multer';
 import uploadConfig from '../config/upload';
 
-// import TransactionsRepository from '../repositories/TransactionsRepository';
+import { getCustomRepository } from 'typeorm';
+
+import TransactionsRepository from '../repositories/TransactionsRepository';
 import CreateTransactionService from '../services/CreateTransactionService';
-import ListTransactionService from '../services/ListTransactionService';
 import DeleteTransactionService from '../services/DeleteTransactionService';
 import ImportTransactionsService from '../services/ImportTransactionsService';
 
@@ -13,10 +14,12 @@ const transactionsRouter = Router();
 const upload = multer(uploadConfig);
 
 transactionsRouter.get('/', async (request, response) => {
-  const listTransactionService = new ListTransactionService();
-  const transactions = await listTransactionService.execute();
+  const transactionsRepository = getCustomRepository(TransactionsRepository);
 
-  return response.status(200).json(transactions);
+  const transactions = await transactionsRepository.find();
+  const balance = await transactionsRepository.getBalance();
+
+  return response.json({ transactions, balance });
 });
 
 transactionsRouter.post('/', async (request, response) => {
@@ -24,13 +27,18 @@ transactionsRouter.post('/', async (request, response) => {
   const { title, value, type, category } = request.body;
 
   const createTransactionService = new CreateTransactionService();
-  const transaction = await createTransactionService.execute({title, value, type, category})
+  const transaction = await createTransactionService.execute({
+    title,
+    value,
+    type,
+    category
+  });
 
   return response.status(201).json(transaction);
 });
 
 transactionsRouter.delete('/:id', async (request, response) => {
-  const id = request.params.id;
+  const { id } = request.params;
 
   const deleteTransactionService = new DeleteTransactionService()
 

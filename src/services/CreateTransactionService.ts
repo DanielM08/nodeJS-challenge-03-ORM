@@ -13,7 +13,11 @@ interface Request {
 }
 
 class CreateTransactionService {
-  public async execute({title, value, type, category} : Request): Promise<Transaction> {
+  public async execute({
+    title,
+    value,
+    type,
+    category} : Request): Promise<Transaction> {
     try{
       const transactionsRepository = getCustomRepository(TransactionRepository);
       const categoriesRepository = getRepository(Category);
@@ -25,29 +29,24 @@ class CreateTransactionService {
         }
       }
 
-      const checkCategoryExists = await categoriesRepository.findOne({
+      let transactionCategory = await categoriesRepository.findOne({
         title: category,
       });
 
-      let categoryId = checkCategoryExists?.id;
-
-      if(!categoryId){
-        categoriesRepository.create
-        const newCategory = categoriesRepository.create({
+      if(!transactionCategory){
+        transactionCategory = categoriesRepository.create({
           title: category,
         });
 
-        await categoriesRepository.save(newCategory);
-
-        categoryId = newCategory.id;
+        await categoriesRepository.save(transactionCategory);
       }
 
       const transaction = transactionsRepository.create({
         title,
         type,
         value,
-        category_id: categoryId
-      })
+        category: transactionCategory,
+      });
 
       await transactionsRepository.save(transaction);
 
